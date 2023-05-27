@@ -1,7 +1,10 @@
+use std::env;
 use std::fmt::Write as _;
 use std::io::{self, BufWriter, Write as _};
 use std::thread;
 use std::time::{Duration, Instant};
+
+use pam::Authenticator;
 
 const MAX_WIDTH: usize = 1000;
 const MAX_HEIGHT: usize = 1000;
@@ -153,10 +156,22 @@ fn main() {
     write!(w, "{}", locked_frame).expect("can't write to stdout buffer");
     w.flush().expect("can't flush frame to stdout");
 
-    let mut buf = String::new();
+    let user = env::var("USER").expect("environment variable USER is unset");
+
+    let mut passwd = String::new();
     io::stdin()
-        .read_line(&mut buf)
+        .read_line(&mut passwd)
         .expect("can't read user input");
+
+    // Remove trailing newline.
+    passwd.pop();
+
+    let mut auth =
+        Authenticator::with_password("system-auth").expect("can't initialize PAM conversation");
+
+    auth.get_handler().set_credentials(user, passwd);
+    auth.authenticate().expect("authentication failed");
+    auth.open_session().expect("can't open PAM session");
 
     for f in unlocking_frames.iter() {
         let start = Instant::now();
