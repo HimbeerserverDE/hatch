@@ -1,5 +1,5 @@
-use std::io::{self, BufWriter, Write};
-use std::sync::{Arc, Mutex};
+use std::fmt::Write as _;
+use std::io::{self, BufWriter, Write as _};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -63,30 +63,43 @@ fn main() {
         }
     }
 
-    let unlock_frame = Arc::new(Mutex::new(None));
-    let mut w = BufWriter::with_capacity(MAX_WIDTH * MAX_HEIGHT * 10, io::stdout());
+    let mut locked_frame = String::new();
 
-    let unlock_frame2 = unlock_frame.clone();
-    thread::spawn(move || {
-        let mut buf = String::new();
-        io::stdin()
-            .read_line(&mut buf)
-            .expect("can't read user input");
+    for y in 0..height {
+        #[allow(clippy::needless_range_loop)]
+        for x in 0..width {
+            let xi = x as usize;
+            let yi = y as usize;
 
-        *unlock_frame2.lock().unwrap() = Some(0isize);
-    });
+            let color = if special[xi][yi] {
+                "\x1b[48;5;15m"
+            } else if colors[xi][yi] {
+                "\x1b[48;5;220m"
+            } else {
+                "\x1b[48;5;226m"
+            };
 
-    loop {
-        let mut unlock_frame = unlock_frame.lock().unwrap();
+            let ch = if !special[xi][yi] && colors[xi][yi] {
+                "*"
+            } else {
+                " "
+            };
 
-        let start = Instant::now();
+            write!(locked_frame, "\x1b[0m{}{}\x1b[0m", color, ch)
+                .expect("can't write to stdout buffer");
+        }
 
-        write!(w, "\x1b[H").expect("can't write to stdout buffer");
+        writeln!(locked_frame).expect("can't write to stdout buffer");
+    }
+
+    let mut unlocking_frames = Vec::new();
+
+    for f in 0..max_f {
+        let mut frame = String::new();
 
         for y in 0..height {
             #[allow(clippy::needless_range_loop)]
             for x in 0..width {
-                let f = unlock_frame.unwrap_or(0);
                 let off = if x <= center_x { f } else { -f };
 
                 let xi = x as usize;
@@ -113,42 +126,44 @@ fn main() {
                 let color = if special[xi_off][yi] || rect_part {
                     "\x1b[48;5;15m"
                 } else if colors[xi][yi] {
-                    if unlock_frame.is_some() {
-                        "\x1b[48;5;76m"
-                    } else {
-                        "\x1b[48;5;220m"
-                    }
-                } else if unlock_frame.is_some() {
-                    "\x1b[48;5;82m"
+                    "\x1b[48;5;76m"
                 } else {
-                    "\x1b[48;5;226m"
+                    "\x1b[48;5;82m"
                 };
 
-                let ch = if special[xi_off][yi] {
-                    " "
-                } else if (rand::random::<f32>() * 15.0).floor() == 14.0 {
+                let ch = if !special[xi][yi] && colors[xi][yi] {
                     "*"
                 } else {
                     " "
                 };
 
-                write!(w, "\x1b[0m{}{}\x1b[0m", color, ch).expect("can't write to stdout buffer");
+                write!(frame, "\x1b[0m{}{}\x1b[0m", color, ch)
+                    .expect("can't write to stdout buffer");
             }
 
-            writeln!(w).expect("can't write to stdout buffer");
+            writeln!(frame).expect("can't write to stdout buffer");
         }
 
+        unlocking_frames.push(frame);
+    }
+
+    let mut w = BufWriter::with_capacity(MAX_WIDTH * MAX_HEIGHT * 10, io::stdout());
+
+    write!(w, "\x1b[H").expect("can't write to stdout buffer");
+    write!(w, "{}", locked_frame).expect("can't write to stdout buffer");
+    w.flush().expect("can't flush frame to stdout");
+
+    let mut buf = String::new();
+    io::stdin()
+        .read_line(&mut buf)
+        .expect("can't read user input");
+
+    for f in unlocking_frames.iter() {
+        let start = Instant::now();
+
+        write!(w, "\x1b[H").expect("can't write to stdout buffer");
+        write!(w, "{}", f).expect("can't write to stdout buffer");
         w.flush().expect("can't flush frame to stdout");
-
-        if let Some(f) = *unlock_frame {
-            if f >= max_f {
-                return;
-            }
-
-            *unlock_frame = Some(f + 1);
-        }
-
-        drop(unlock_frame);
 
         let dur = Instant::now().duration_since(start);
         thread::sleep(Duration::from_micros(v).saturating_sub(dur));
