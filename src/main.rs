@@ -52,7 +52,11 @@ fn main() {
                     y - margin_y
                 };
 
-                if x == center_x - 3 - offset || x == center_x + 3 + offset {
+                if x == center_x - 3 - offset
+                    || x == center_x - 9 - offset
+                    || x == center_x + 3 + offset
+                    || x == center_x + 9 + offset
+                {
                     special[xi][yi] = true;
                 }
             }
