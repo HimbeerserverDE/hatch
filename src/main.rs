@@ -12,6 +12,8 @@ fn main() {
     let width = width as isize;
     let height = (height as isize) - 1;
 
+    let odd_height = height % 2 != 0;
+
     let center_x = width / 2;
     let center_y = height / 2;
 
@@ -36,8 +38,6 @@ fn main() {
         for x in 0..width {
             let xi = x as usize;
             let yi = y as usize;
-
-            let odd_height = height % 2 != 0;
 
             if y > margin_y && y < height - margin_y - if odd_height { 1 } else { 0 } {
                 let offset = if y <= center_y {
@@ -82,7 +82,17 @@ fn main() {
                     0
                 };
 
-                let color = if special[xi_off][yi] {
+                let rect_part_horizontal = (y == margin_y - 5
+                    || y == height - margin_y - if odd_height { 1 } else { 0 } + 5)
+                    && (center_x - x).abs() <= off.abs();
+
+                let rect_part_vertical = (y >= margin_y - 5
+                    && y <= height - margin_y - if odd_height { 1 } else { 0 } + 5)
+                    && (center_x - x).abs() == off.abs();
+
+                let rect_part = rect_part_horizontal || rect_part_vertical;
+
+                let color = if special[xi_off][yi] || rect_part {
                     "\x1b[48;5;15m"
                 } else if colors[xi][yi] {
                     if unlock_frame.is_some() {
