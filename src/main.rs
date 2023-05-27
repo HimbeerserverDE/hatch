@@ -72,10 +72,21 @@ fn main() {
         for y in 0..height {
             #[allow(clippy::needless_range_loop)]
             for x in 0..width {
+                let f = unlock_frame.unwrap_or(0);
+                let off = if x <= center_x { f } else { -f };
+
                 let xi = x as usize;
                 let yi = y as usize;
 
-                let color = if special[xi][yi] {
+                let xi_off = if (x <= center_x && x + off <= center_x)
+                    || (x > center_x && x + off > center_x)
+                {
+                    (x + off) as usize
+                } else {
+                    0
+                };
+
+                let color = if special[xi_off][yi] {
                     "\x1b[48;5;15m"
                 } else if colors[xi][yi] {
                     if unlock_frame.is_some() {
@@ -91,7 +102,7 @@ fn main() {
                     }
                 };
 
-                let ch = if special[xi][yi] {
+                let ch = if special[xi_off][yi] {
                     " "
                 } else if (rand::random::<f32>() * 15.0).floor() == 14.0 {
                     "*"
@@ -106,6 +117,10 @@ fn main() {
         }
 
         w.flush().expect("can't flush frame to stdout");
+
+        if let Some(f) = unlock_frame {
+            unlock_frame = Some(f + 1);
+        }
 
         thread::sleep(Duration::from_millis(150));
     }
