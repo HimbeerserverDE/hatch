@@ -9,7 +9,8 @@ fn main() {
     let (width, height) =
         term_size::dimensions().expect("unable to get terminal size, is this a terminal?");
 
-    let height = height - 1;
+    let width = width as isize;
+    let height = (height as isize) - 1;
 
     let center_x = width / 2;
     let center_y = height / 2;
@@ -19,7 +20,10 @@ fn main() {
     for y in 0..height {
         #[allow(clippy::needless_range_loop)]
         for x in 0..width {
-            colors[x][y] = (rand::random::<f32>() * 20.0).floor() == 19.0;
+            let xi = x as usize;
+            let yi = y as usize;
+
+            colors[xi][yi] = (rand::random::<f32>() * 20.0).floor() == 19.0;
         }
     }
 
@@ -30,15 +34,26 @@ fn main() {
     for y in 0..height {
         #[allow(clippy::needless_range_loop)]
         for x in 0..width {
-            if y > margin_y && y <= height - margin_y {
-                let offset = if y <= center_y {
+            let xi = x as usize;
+            let yi = y as usize;
+
+            let odd_height = height % 2 != 0;
+
+            if y > margin_y && y < height - margin_y - if odd_height { 1 } else { 0 } {
+                let offset = if y < center_y {
                     y - margin_y
+                } else if y > center_y {
+                    if odd_height {
+                        (height - margin_y) - y - 1
+                    } else {
+                        (height - margin_y) - y
+                    }
                 } else {
-                    (height - margin_y) - y + 1
+                    y - margin_y
                 };
 
                 if x == center_x - 3 - offset {
-                    special[x][y] = true;
+                    special[xi][yi] = true;
                 }
             }
         }
@@ -52,14 +67,19 @@ fn main() {
         for y in 0..height {
             #[allow(clippy::needless_range_loop)]
             for x in 0..width {
-                let color = if colors[x][y] {
+                let xi = x as usize;
+                let yi = y as usize;
+
+                let color = if special[xi][yi] {
+                    "\x1b[48;5;15m"
+                } else if colors[xi][yi] {
                     "\x1b[48;5;214m"
                 } else {
                     "\x1b[48;5;208m"
                 };
 
-                let ch = if special[x][y] {
-                    "-"
+                let ch = if special[xi][yi] {
+                    " "
                 } else if (rand::random::<f32>() * 15.0).floor() == 14.0 {
                     "*"
                 } else {
