@@ -40,16 +40,12 @@ fn main() {
             let odd_height = height % 2 != 0;
 
             if y > margin_y && y < height - margin_y - if odd_height { 1 } else { 0 } {
-                let offset = if y < center_y {
+                let offset = if y <= center_y {
                     y - margin_y
-                } else if y > center_y {
-                    if odd_height {
-                        (height - margin_y) - y - 1
-                    } else {
-                        (height - margin_y) - y
-                    }
+                } else if odd_height {
+                    (height - margin_y) - y - 1
                 } else {
-                    y - margin_y
+                    (height - margin_y) - y
                 };
 
                 if x == center_x - 3 - offset
@@ -94,12 +90,10 @@ fn main() {
                     } else {
                         "\x1b[48;5;220m"
                     }
+                } else if unlock_frame.is_some() {
+                    "\x1b[48;5;82m"
                 } else {
-                    if unlock_frame.is_some() {
-                        "\x1b[48;5;82m"
-                    } else {
-                        "\x1b[48;5;226m"
-                    }
+                    "\x1b[48;5;226m"
                 };
 
                 let ch = if special[xi_off][yi] {
