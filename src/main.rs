@@ -20,7 +20,7 @@ fn main() {
 
     let odd_height = height % 2 != 0;
     let max_f = center_x - 9 - (center_y - margin_y) - margin_x;
-    let v = (100000 / max_f) as u64;
+    let v = (200000 / max_f) as u64;
 
     let mut colors = [[false; MAX_HEIGHT]; MAX_WIDTH];
 
