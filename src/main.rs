@@ -1,6 +1,6 @@
 use std::io::{self, BufWriter, Write};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const MAX_WIDTH: usize = 1000;
 const MAX_HEIGHT: usize = 1000;
@@ -15,9 +15,12 @@ fn main() {
     let center_x = width / 2;
     let center_y = height / 2;
 
+    let margin_x = width / 4;
     let margin_y = height / 4;
 
     let odd_height = height % 2 != 0;
+    let max_f = center_x - 9 - (center_y - margin_y) - margin_x;
+    let v = (100000 / max_f) as u64;
 
     let mut colors = [[false; MAX_HEIGHT]; MAX_WIDTH];
 
@@ -63,6 +66,8 @@ fn main() {
     let mut w = BufWriter::with_capacity(MAX_WIDTH * MAX_HEIGHT * 10, io::stdout());
 
     loop {
+        let start = Instant::now();
+
         write!(w, "\x1b[H").expect("can't write to stdout buffer");
 
         for y in 0..height {
@@ -123,9 +128,15 @@ fn main() {
         w.flush().expect("can't flush frame to stdout");
 
         if let Some(f) = unlock_frame {
+            if f >= max_f {
+                return;
+            }
+
             unlock_frame = Some(f + 1);
         }
 
-        // thread::sleep(Duration::from_millis(5));
+        let dur = Instant::now().duration_since(start);
+
+        thread::sleep(Duration::from_micros(v).saturating_sub(dur));
     }
 }
