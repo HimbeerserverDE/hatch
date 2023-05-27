@@ -1,4 +1,5 @@
 use std::io::{self, BufWriter, Write};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -62,10 +63,22 @@ fn main() {
         }
     }
 
-    let mut unlock_frame = Some(0isize);
+    let unlock_frame = Arc::new(Mutex::new(None));
     let mut w = BufWriter::with_capacity(MAX_WIDTH * MAX_HEIGHT * 10, io::stdout());
 
+    let unlock_frame2 = unlock_frame.clone();
+    thread::spawn(move || {
+        let mut buf = String::new();
+        io::stdin()
+            .read_line(&mut buf)
+            .expect("can't read user input");
+
+        *unlock_frame2.lock().unwrap() = Some(0isize);
+    });
+
     loop {
+        let mut unlock_frame = unlock_frame.lock().unwrap();
+
         let start = Instant::now();
 
         write!(w, "\x1b[H").expect("can't write to stdout buffer");
@@ -127,16 +140,17 @@ fn main() {
 
         w.flush().expect("can't flush frame to stdout");
 
-        if let Some(f) = unlock_frame {
+        if let Some(f) = *unlock_frame {
             if f >= max_f {
                 return;
             }
 
-            unlock_frame = Some(f + 1);
+            *unlock_frame = Some(f + 1);
         }
 
-        let dur = Instant::now().duration_since(start);
+        drop(unlock_frame);
 
+        let dur = Instant::now().duration_since(start);
         thread::sleep(Duration::from_micros(v).saturating_sub(dur));
     }
 }
