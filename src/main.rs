@@ -77,9 +77,9 @@ fn main() {
                 let color = if special[xi][yi] {
                     "\x1b[48;5;15m"
                 } else if colors[xi][yi] {
-                    "\x1b[48;5;214m"
+                    "\x1b[48;5;220m"
                 } else {
-                    "\x1b[48;5;208m"
+                    "\x1b[48;5;226m"
                 };
 
                 let ch = if special[xi][yi] {
