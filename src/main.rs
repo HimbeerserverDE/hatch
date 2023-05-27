@@ -12,10 +12,12 @@ fn main() {
     let width = width as isize;
     let height = (height as isize) - 1;
 
-    let odd_height = height % 2 != 0;
-
     let center_x = width / 2;
     let center_y = height / 2;
+
+    let margin_y = height / 4;
+
+    let odd_height = height % 2 != 0;
 
     let mut colors = [[false; MAX_HEIGHT]; MAX_WIDTH];
 
@@ -30,8 +32,6 @@ fn main() {
     }
 
     let mut special = [[false; MAX_HEIGHT]; MAX_WIDTH];
-
-    let margin_y = height / 4;
 
     for y in 0..height {
         #[allow(clippy::needless_range_loop)]
@@ -126,6 +126,6 @@ fn main() {
             unlock_frame = Some(f + 1);
         }
 
-        thread::sleep(Duration::from_millis(150));
+        // thread::sleep(Duration::from_millis(5));
     }
 }
