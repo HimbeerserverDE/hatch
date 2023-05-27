@@ -63,6 +63,7 @@ fn main() {
         }
     }
 
+    let mut unlock_frame = Some(0isize);
     let mut w = BufWriter::with_capacity(MAX_WIDTH * MAX_HEIGHT * 10, io::stdout());
 
     loop {
@@ -77,9 +78,17 @@ fn main() {
                 let color = if special[xi][yi] {
                     "\x1b[48;5;15m"
                 } else if colors[xi][yi] {
-                    "\x1b[48;5;220m"
+                    if unlock_frame.is_some() {
+                        "\x1b[48;5;76m"
+                    } else {
+                        "\x1b[48;5;220m"
+                    }
                 } else {
-                    "\x1b[48;5;226m"
+                    if unlock_frame.is_some() {
+                        "\x1b[48;5;82m"
+                    } else {
+                        "\x1b[48;5;226m"
+                    }
                 };
 
                 let ch = if special[xi][yi] {
